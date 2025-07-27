@@ -46,6 +46,7 @@ def encode_categoricals(df: pd.DataFrame, method: str = 'label') -> pd.DataFrame
     """
     Encode categorical (object) columns using label encoding or one-hot encoding.
     """
+    df = df.copy()
     if method == 'label':
         for col in df.select_dtypes(include='object').columns:
             le = LabelEncoder()
@@ -60,6 +61,7 @@ def scale_features(df: pd.DataFrame, method: str = 'standard') -> pd.DataFrame:
     """
     Scale numeric features using StandardScaler or MinMaxScaler.
     """
+    df = df.copy()
     scaler = StandardScaler() if method == 'standard' else MinMaxScaler()
     numeric_cols = df.select_dtypes(include='number').columns
     df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
@@ -71,9 +73,12 @@ def handle_outliers(df: pd.DataFrame, threshold: float = 3.0) -> pd.DataFrame:
     """
     Remove rows with outliers based on Z-score threshold.
     """
+    df = df.copy()
     numeric_cols = df.select_dtypes(include='number').columns
-    z_scores = np.abs(zscore(df[numeric_cols]))
-    return df[(z_scores < threshold).all(axis=1)]
+    if len(numeric_cols) > 0:
+        z_scores = np.abs(zscore(df[numeric_cols]))
+        df = df[(z_scores < threshold).all(axis=1)]
+    return df
 
 # ───────────────────────────────────────────────
 # Full Preprocessing Pipeline
