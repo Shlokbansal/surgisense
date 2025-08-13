@@ -3,13 +3,16 @@
 ## Overview
 SurgiSense is an open-source AI project designed to predict post-operative complications using interpretable machine learning. Built with a focus on transparency, clinical relevance, and ease of deployment, SurgiSense aims to support clinicians in real-time surgical risk assessment.
 
+## Roadmap
+Check out the [MVP Roadmap Issue](https://github.com/Shlokbansal/surgisense/issues/1) to see current progress and upcoming milestones.
+
 ## Project Status
 
-- ✅ Data loader module complete (`load_data.py`)
-- ✅ Preprocessing utilities implemented (`utils.py`)
-- ✅ Dataset exploration + EDA complete (`eda.ipynb`)
-- ✅ First model trained using Random Forest + SHAP interpretability (`eda_complete.ipynb`)
-- 🟡 Additional model prototyping in progress (XGBoost, LightGBM)
+- COMPLETE: Data loader module complete (`load_data.py`)
+- COMPLETE: Preprocessing utilities implemented (`utils.py`)
+- COMPLETE: Dataset exploration + EDA complete (`eda.ipynb`)
+- COMPLETE: First model trained using Random Forest + SHAP interpretability (`eda_complete.ipynb`)
+- IN PROGRESS: Additional model prototyping in progress (XGBoost, LightGBM)
 - ⬜ Streamlit-based demo interface (in development)
 
 ## Project Structure
