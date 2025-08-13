@@ -1,7 +1,17 @@
 # SurgiSense: Post-Operative Complication Risk Predictor
 
 ## Overview
-SurgiSense is an AI-powered tool designed to predict the likelihood of post-operative complications in patients using clinical and surgical data. It aims to assist healthcare providers in early intervention and improve outcomes.
+SurgiSense is an open-source AI project designed to predict post-operative complications using interpretable machine learning. Built with a focus on transparency, clinical relevance, and ease of deployment, SurgiSense aims to support clinicians in real-time surgical risk assessment.
+
+## Project Status
+
+- COMPLETE: Data loader module complete (`load_data.py`)
+- COMPLETE: Preprocessing utilities implemented (`utils.py`)
+- IN PROGRESS: Dataset exploration and sourcing in progress
+- ⬜ Exploratory Data Analysis (EDA)
+- ⬜ Model prototyping (Random Forest, XGBoost)
+- ⬜ Interpretability tools (SHAP, LIME)
+- ⬜ Streamlit-based demo interface
 
 ## Project Structure
 surgisense/
