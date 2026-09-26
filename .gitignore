@@ -138,6 +138,8 @@ celerybeat.pid
 .env
 data/
 models/
+reports/
+data_clinical_*.txt
 .envrc
 .venv
 env/
