@@ -39,6 +39,8 @@ Both model specifications are fixed in advance. Patients are split once into 80%
 
 Coefficients are reported as hazard ratios. Age and `log1p(TMB)` coefficients represent a one-standard-deviation change on the development cohort. They are model associations, not causal effects. Stage indicators use stage I as reference; male sex uses female as reference.
 
+The generated evaluation includes development-only Schoenfeld-residual checks of the proportional-hazards assumption. These p-values are exploratory and unadjusted for multiple comparisons.
+
 ## Reproduced result
 
 The pinned source snapshot yields 501 eligible patients, including 181 observed deaths and 320 censored observations. The held-out set contains 101 patients and 36 deaths.
@@ -50,9 +52,11 @@ The pinned source snapshot yields 501 eligible patients, including 181 observed 
 
 TMB did not improve discrimination in this split. The held-out intervals are wide, so this result is best read as a demonstration of the analysis workflow, not a biomarker conclusion. Running `surgisense evaluate` regenerates the exact metrics and coefficient tables locally.
 
+The proportional-hazards check for sex is approximately p=0.027 in both models. A fixed hazard ratio for sex may therefore be an oversimplification; the coefficient table is descriptive and should not be interpreted as a stable effect over follow-up.
+
 ## Limits and next work
 
-This is one retrospective TCGA cohort with limited sample size and incomplete follow-up. Pathologic stage and TMB may not be available at the time of initial diagnosis; the analysis makes no real-time risk prediction claim. Missingness, selection into sequencing, treatment, and changing staging editions can bias estimates. Harrell's concordance does not establish calibration or clinical usefulness. External validation and time-specific calibration are needed before stronger claims.
+This is one retrospective TCGA cohort with limited sample size and incomplete follow-up. Pathologic stage and TMB may not be available at the time of initial diagnosis; the analysis makes no real-time risk prediction claim. Specimen collection dates are unavailable in these tables, so delayed entry cannot be addressed and selection into sequencing may bias the estimates. Missingness, treatment, and changing staging editions are additional concerns. Harrell's concordance does not establish calibration or clinical usefulness. External validation and time-specific calibration are needed before stronger claims.
 
 The next increment will add a prespecified RNA expression analysis and an external cohort where comparable variables and outcomes exist. Feature selection must remain inside the training folds. The old postoperative notebooks are retained under `legacy/` as historical experiments and are not part of this oncology workflow.
 

@@ -25,6 +25,10 @@ def main() -> None:
         return
 
     cohort, audit = build_cohort(args.raw_dir)
+    report = coefficients = None
+    if args.command in ("evaluate", "run"):
+        report, coefficients = evaluate(cohort)
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
     cohort.to_parquet(args.output_dir / "cohort.parquet", index=False)
     (args.output_dir / "cohort_audit.json").write_text(
@@ -43,7 +47,7 @@ def main() -> None:
     if args.command == "cohort":
         return
 
-    report, coefficients = evaluate(cohort)
+    assert report is not None and coefficients is not None
     (args.output_dir / "evaluation.json").write_text(json.dumps(report, indent=2) + "\n")
     for name, table in coefficients.items():
         table.to_csv(args.output_dir / f"{name}_coefficients.csv", index=False)

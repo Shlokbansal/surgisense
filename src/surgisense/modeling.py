@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 from lifelines import CoxPHFitter
+from lifelines.statistics import proportional_hazard_test
 from lifelines.utils import concordance_index
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -20,9 +21,10 @@ NUMERIC_MULTIMODAL = ["age", "log1p_tmb"]
 CATEGORICAL = ["sex", "stage"]
 
 
-def prepare_features(cohort: pd.DataFrame) -> pd.DataFrame:
-    features = cohort[["age", "sex", "stage", "tmb"]].copy()
-    features["log1p_tmb"] = np.log1p(features.pop("tmb").astype(float))
+def prepare_features(cohort: pd.DataFrame, include_tmb: bool) -> pd.DataFrame:
+    features = cohort[["age", "sex", "stage"]].copy()
+    if include_tmb:
+        features["log1p_tmb"] = np.log1p(cohort["tmb"].astype(float))
     for column in CATEGORICAL:
         features[column] = features[column].astype(object).where(features[column].notna(), np.nan)
     return features
@@ -66,21 +68,22 @@ class CoxModel:
     preprocessor: ColumnTransformer
     estimator: CoxPHFitter
     feature_names: list[str]
+    include_tmb: bool
 
     @classmethod
     def fit(cls, cohort: pd.DataFrame, include_tmb: bool) -> CoxModel:
         preprocessor = make_preprocessor(include_tmb)
-        array = preprocessor.fit_transform(prepare_features(cohort))
+        array = preprocessor.fit_transform(prepare_features(cohort, include_tmb))
         names = preprocessor.get_feature_names_out().tolist()
         transformed = pd.DataFrame(array, columns=names, index=cohort.index)
         transformed["duration_months"] = cohort["duration_months"].to_numpy()
         transformed["event"] = cohort["event"].to_numpy()
         estimator = CoxPHFitter(penalizer=0.1)
         estimator.fit(transformed, duration_col="duration_months", event_col="event")
-        return cls(preprocessor, estimator, names)
+        return cls(preprocessor, estimator, names, include_tmb)
 
     def predict_risk(self, cohort: pd.DataFrame) -> np.ndarray:
-        array = self.preprocessor.transform(prepare_features(cohort))
+        array = self.preprocessor.transform(prepare_features(cohort, self.include_tmb))
         transformed = pd.DataFrame(array, columns=self.feature_names, index=cohort.index)
         return self.estimator.predict_partial_hazard(transformed).to_numpy().ravel()
 
@@ -91,6 +94,17 @@ class CoxModel:
             "log_hazard_coefficient": coefficients.to_numpy(),
             "hazard_ratio": np.exp(coefficients.to_numpy()),
         })
+
+    def proportional_hazards_p_values(self, cohort: pd.DataFrame) -> dict[str, float]:
+        """Exploratory Schoenfeld-residual checks on the development cohort only."""
+        array = self.preprocessor.transform(prepare_features(cohort, self.include_tmb))
+        transformed = pd.DataFrame(array, columns=self.feature_names, index=cohort.index)
+        transformed["duration_months"] = cohort["duration_months"].to_numpy()
+        transformed["event"] = cohort["event"].to_numpy()
+        diagnostic = proportional_hazard_test(
+            self.estimator, transformed, time_transform="rank"
+        ).summary
+        return {feature: float(p_value) for feature, p_value in diagnostic["p"].items()}
 
 
 def c_index(cohort: pd.DataFrame, risk: np.ndarray) -> float:
@@ -158,6 +172,9 @@ def evaluate(cohort: pd.DataFrame) -> tuple[dict, dict[str, pd.DataFrame]]:
             "development_cv_mean_c_index": float(np.mean(fold_scores)),
             "held_out_c_index": c_index(test, test_risk),
             "held_out_bootstrap_95pct_interval": bootstrap_interval(test, test_risk),
+            "development_proportional_hazards_p_values": (
+                final_model.proportional_hazards_p_values(development)
+            ),
         }
         coefficients[name] = final_model.coefficients()
     return report, coefficients
