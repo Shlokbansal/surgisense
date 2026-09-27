@@ -20,6 +20,7 @@ from surgisense.modeling import (
     make_preprocessor,
     prepare_features,
 )
+from surgisense.validation import HORIZONS_MONTHS, evaluate_horizons
 
 GENE_COUNT = 1000
 RNA_COMPONENTS = 5
@@ -78,6 +79,13 @@ class RNACoxModel:
     def predict_risk(self, cohort: pd.DataFrame, expression: np.ndarray) -> np.ndarray:
         design = self._design(cohort, expression)
         return self.estimator.predict_partial_hazard(design).to_numpy().ravel()
+
+    def predict_survival(
+        self, cohort: pd.DataFrame, expression: np.ndarray, horizon_months: float
+    ) -> np.ndarray:
+        design = self._design(cohort, expression)
+        survival = self.estimator.predict_survival_function(design, times=[horizon_months])
+        return survival.iloc[0].to_numpy()
 
     def _design(self, cohort: pd.DataFrame, expression: np.ndarray) -> pd.DataFrame:
         if len(cohort) != len(expression):
@@ -209,5 +217,18 @@ def evaluate_rna(
         ),
         "development_selected_gene_ids": [gene_ids[i] for i in rna.gene_indices],
         "development_rna_pc_explained_variance_ratio": rna.pca.explained_variance_ratio_.tolist(),
+        "fixed_horizon_validation": evaluate_horizons(
+            development,
+            test,
+            {
+                "clinical": {
+                    horizon: clinical.predict_survival(test, horizon) for horizon in HORIZONS_MONTHS
+                },
+                "clinical_plus_rna": {
+                    horizon: rna.predict_survival(test, test_rna, horizon)
+                    for horizon in HORIZONS_MONTHS
+                },
+            },
+        ),
     }
     return report, rna.coefficients()

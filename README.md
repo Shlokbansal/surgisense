@@ -50,6 +50,8 @@ Coefficients are reported as hazard ratios. Age and `log1p(TMB)` coefficients re
 
 The generated clinical/TMB evaluation includes development-only Schoenfeld-residual checks of the proportional-hazards assumption. These p-values are exploratory and unadjusted for multiple comparisons.
 
+Both experiments also evaluate absolute survival probabilities at prespecified 12- and 24-month horizons. The [inverse-probability-of-censoring-weighted Brier score](https://scikit-survival.readthedocs.io/en/stable/api/generated/sksurv.metrics.brier_score.html) measures prediction error when some patients leave follow-up before a horizon; lower is better. The censoring curve and a simple constant-probability reference model are fit on development patients only. The held-out Kaplan–Meier estimate is used only for a descriptive comparison of the average predicted and observed survival rates. This is a population-level check, **not** proof that individual probabilities are calibrated. The marginal censoring model assumes censoring is independent of survival; informative follow-up could invalidate it.
+
 The RNA analysis first matches the expression matrix to patients by exact primary-tumor sample ID. It drops gene rows with missing or repeated Entrez identifiers rather than guessing which row to keep. It applies the fixed transform `log2(RSEM + 1)`; within each training fold, it selects the 1,000 most variable genes, standardizes them, and compresses them to five principal components (PCs). Gene selection, scaling, PCA, clinical preprocessing, and Cox fitting are all fit inside each training fold. The fixed RNA model is compared with a clinical-only model on exactly the same RNA-matched patients and held-out set. A paired bootstrap interval resamples the same held-out patients for the difference in C-index. PCs are broad mathematical summaries, not identified biomarkers. The RNA report also includes development-only exploratory proportional-hazards checks.
 
 ## Reproduced result
@@ -76,11 +78,26 @@ Of the 501 eligible patients, 497 have an exact RNA sample match; four are exclu
 
 The held-out difference (RNA minus clinical) is −0.061, with a paired bootstrap 95% interval of −0.121 to 0.007. RNA improved development cross-validation but **did not improve held-out discrimination** in this fixed analysis. This is consistent with possible overfitting and is not evidence that RNA lacks prognostic value generally. The RNA specification was not revised after looking at the held-out result. The RNA-matched split is different from the earlier 501-patient TMB split, so the two tables should not be compared row-for-row.
 
+### Fixed-horizon probability checks
+
+The earlier C-index asks whether patients are ranked in roughly the right order. This check asks a different question: are the predicted chances of surviving one or two years accurate? A model can do acceptably on one question and poorly on the other.
+
+The constant reference assigns everyone the same survival probability estimated from development patients; it does not use patient features. Brier scores below are held-out errors, so smaller is better. Scores from the 501-patient and 497-patient experiments use different held-out sets and should not be compared directly.
+
+| Experiment | Horizon | Constant reference | Clinical | Clinical + molecular data |
+| --- | ---: | ---: | ---: | ---: |
+| Clinical / TMB (501 patients) | 12 months | 0.088 | 0.089 | TMB: 0.089 |
+| Clinical / TMB (501 patients) | 24 months | 0.168 | 0.169 | TMB: 0.171 |
+| RNA-matched (497 patients) | 12 months | 0.080 | 0.082 | RNA: 0.084 |
+| RNA-matched (497 patients) | 24 months | 0.170 | 0.182 | RNA: 0.197 |
+
+No fitted model beat the constant reference in these point estimates. On the original clinical/TMB held-out set, the clinical model predicted an average 24-month death probability of 25.1%, while the held-out Kaplan–Meier estimate was 18.9% (17 deaths observed by 24 months among 101 held-out patients). These small samples and incomplete follow-up make the gaps uncertain; this is a warning against presenting the outputs as reliable patient-level risk estimates, not a definitive comparison of all possible models. The full unrounded values and censoring counts are in the generated `evaluation.json` and `rna_evaluation.json` reports.
+
 ## Limits and next work
 
-This is one retrospective TCGA cohort with limited sample size and incomplete follow-up. Pathologic stage and TMB may not be available at the time of initial diagnosis; the analysis makes no real-time risk prediction claim. Specimen collection dates are unavailable in these tables, so delayed entry cannot be addressed and selection into sequencing may bias the estimates. Missingness, treatment, and changing staging editions are additional concerns. Harrell's concordance does not establish calibration or clinical usefulness. External validation and time-specific calibration are needed before stronger claims.
+This is one retrospective TCGA cohort with limited sample size and incomplete follow-up. Pathologic stage and TMB may not be available at the time of initial diagnosis; the analysis makes no real-time risk prediction claim. Specimen collection dates are unavailable in these tables, so delayed entry cannot be addressed and selection into sequencing may bias the estimates. Missingness, treatment, and changing staging editions are additional concerns. Harrell's concordance alone does not establish calibration or clinical usefulness, and the new fixed-horizon checks show weak probability performance. External validation and fuller calibration assessment are needed before stronger claims.
 
-The next increment will evaluate calibration and seek an external cohort where comparable variables and outcomes exist. The old postoperative notebooks are retained under `legacy/` as historical experiments and are not part of this oncology workflow.
+The next increment should seek an external cohort where comparable variables and outcomes exist. Any near-term public MVP should explain the cohort, methods, and results rather than present an individual patient risk calculator as validated. The old postoperative notebooks are retained under `legacy/` as historical experiments and are not part of this oncology workflow.
 
 ## Repository layout
 

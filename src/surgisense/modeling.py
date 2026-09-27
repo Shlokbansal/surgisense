@@ -15,6 +15,8 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from surgisense.validation import HORIZONS_MONTHS, evaluate_horizons
+
 SEED = 42
 NUMERIC_CLINICAL = ["age"]
 NUMERIC_MULTIMODAL = ["age", "log1p_tmb"]
@@ -83,9 +85,20 @@ class CoxModel:
         return cls(preprocessor, estimator, names, include_tmb)
 
     def predict_risk(self, cohort: pd.DataFrame) -> np.ndarray:
-        array = self.preprocessor.transform(prepare_features(cohort, self.include_tmb))
-        transformed = pd.DataFrame(array, columns=self.feature_names, index=cohort.index)
+        transformed = self._design(cohort)
         return self.estimator.predict_partial_hazard(transformed).to_numpy().ravel()
+
+    def predict_survival(self, cohort: pd.DataFrame, horizon_months: float) -> np.ndarray:
+        """Absolute probability of surviving beyond a fixed time since diagnosis."""
+        transformed = self._design(cohort)
+        survival = self.estimator.predict_survival_function(
+            transformed, times=[horizon_months]
+        )
+        return survival.iloc[0].to_numpy()
+
+    def _design(self, cohort: pd.DataFrame) -> pd.DataFrame:
+        array = self.preprocessor.transform(prepare_features(cohort, self.include_tmb))
+        return pd.DataFrame(array, columns=self.feature_names, index=cohort.index)
 
     def coefficients(self) -> pd.DataFrame:
         coefficients = self.estimator.params_
@@ -158,6 +171,7 @@ def evaluate(cohort: pd.DataFrame) -> tuple[dict, dict[str, pd.DataFrame]]:
         "models": {},
     }
     coefficients = {}
+    survival_predictions = {}
     for name, include_tmb in (("clinical", False), ("clinical_plus_tmb", True)):
         fold_scores = []
         for fit_idx, validation_idx in folds.split(development, development["event"]):
@@ -177,4 +191,10 @@ def evaluate(cohort: pd.DataFrame) -> tuple[dict, dict[str, pd.DataFrame]]:
             ),
         }
         coefficients[name] = final_model.coefficients()
+        survival_predictions[name] = {
+            horizon: final_model.predict_survival(test, horizon) for horizon in HORIZONS_MONTHS
+        }
+    report["fixed_horizon_validation"] = evaluate_horizons(
+        development, test, survival_predictions
+    )
     return report, coefficients

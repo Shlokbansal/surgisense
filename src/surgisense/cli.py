@@ -51,6 +51,7 @@ def main() -> None:
             "held_out_rna_minus_clinical_c_index": (
                 rna_report["held_out_rna_minus_clinical_c_index"]
             ),
+            "fixed_horizon_validation": rna_report["fixed_horizon_validation"],
         }, indent=2))
         return
 
@@ -80,7 +81,10 @@ def main() -> None:
     (args.output_dir / "evaluation.json").write_text(json.dumps(report, indent=2) + "\n")
     for name, table in coefficients.items():
         table.to_csv(args.output_dir / f"{name}_coefficients.csv", index=False)
-    print(json.dumps(report["models"], indent=2))
+    print(json.dumps({
+        "models": report["models"],
+        "fixed_horizon_validation": report["fixed_horizon_validation"],
+    }, indent=2))
 
 
 if __name__ == "__main__":
