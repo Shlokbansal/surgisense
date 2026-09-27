@@ -42,6 +42,26 @@ To run the separate tumor RNA experiment:
 
 This writes `rna_cohort_audit.json`, `rna_evaluation.json`, and `rna_coefficients.csv` under `reports/luad/`. It does not alter the clinical/TMB evaluation.
 
+## Research dashboard MVP
+
+The [static dashboard](docs/index.html) is a public-facing explanation of the cohort and validation results—not a patient risk calculator. It has no patient input form, no model inference endpoint, and no raw clinical records. Its only data file, [`docs/results.json`](docs/results.json), contains aggregate counts and scores explicitly selected by [`dashboard_export.py`](src/surgisense/dashboard_export.py); split patient IDs and gene-level measurements are not exported.
+
+Preview locally from the repository root:
+
+```bash
+python3 -m http.server 8765 --directory docs
+```
+
+Open `http://127.0.0.1:8765/`. To regenerate the checked-in public summary after intentionally rerunning both evaluations:
+
+```bash
+.venv/bin/surgisense evaluate
+.venv/bin/surgisense evaluate-rna
+.venv/bin/surgisense export-dashboard
+```
+
+The dashboard uses plain HTML, CSS, and JavaScript, so no web build step or third-party browser dependency is required. CI checks the Python analysis, export contract, JavaScript syntax, and public summary. The `docs/` folder can be served by GitHub Pages after this branch is reviewed and merged; it is not a live clinical service.
+
 ## Evaluation design
 
 Both model specifications are fixed in advance. Patients are split once into 80% development and 20% held-out test sets, stratified by death indicator. Each model receives five-fold stratified cross-validation on development patients. Imputation, one-hot encoding, scaling, and Cox fitting occur independently inside each fold. Final models are fit on all development patients and evaluated once on the same held-out patients. The metric is Harrell's concordance index; 95% bootstrap intervals resample held-out patients and are conditional on the fitted models.
@@ -105,6 +125,7 @@ The next increment should seek an external cohort where comparable variables and
 src/surgisense/       Download verification, cohort builder, models, CLI
 src/surgisense/sql/   Cohort SQL
 tests/                Data contract and modeling tests
+docs/                 Static research dashboard and aggregate results
 legacy/               Historical postoperative experiments
 data/raw/             Downloaded inputs (ignored)
 reports/luad/         Generated outputs (ignored)

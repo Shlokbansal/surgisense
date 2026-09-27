@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from surgisense.cohort import build_cohort
+from surgisense.dashboard_export import export_public_summary
 from surgisense.expression import load_expression
 from surgisense.modeling import evaluate
 from surgisense.rna_modeling import evaluate_rna
@@ -16,11 +17,20 @@ from surgisense.sources import DATAHUB_COMMIT, RNA_SOURCE, SOURCES, fetch_source
 def main() -> None:
     parser = argparse.ArgumentParser(description="SurgiSense LUAD research workflow")
     parser.add_argument(
-        "command", choices=["fetch", "cohort", "evaluate", "run", "fetch-rna", "evaluate-rna"]
+        "command",
+        choices=[
+            "fetch", "cohort", "evaluate", "run", "fetch-rna", "evaluate-rna", "export-dashboard"
+        ],
     )
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--output-dir", type=Path, default=Path("reports/luad"))
+    parser.add_argument("--dashboard-output", type=Path, default=Path("docs/results.json"))
     args = parser.parse_args()
+
+    if args.command == "export-dashboard":
+        export_public_summary(args.output_dir, args.dashboard_output)
+        print(f"Exported aggregate dashboard data to {args.dashboard_output}")
+        return
 
     if args.command in ("fetch", "run", "fetch-rna"):
         fetched = fetch_sources(args.raw_dir, include_rna=args.command == "fetch-rna")

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="SurgiSense: an open, reproducible lung cancer survival research dashboard." />
+    <meta name="theme-color" content="#0b1b2b" />
+    <title>SurgiSense — Lung cancer research dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to results</a>
+    <header class="site-header">
+      <div class="container nav-row">
+        <a class="brand" href="#top" aria-label="SurgiSense, back to top">
+          <span class="brand-mark" aria-hidden="true">S<span></span></span>
+          <span>SurgiSense</span>
+        </a>
+        <nav aria-label="Main navigation">
+          <a href="#results">Results</a>
+          <a href="#method">Method</a>
+          <a href="#limits">Limits</a>
+          <a class="nav-github" href="https://github.com/Shlokbansal/surgisense" target="_blank" rel="noopener noreferrer">View code <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-orbit orbit-one" aria-hidden="true"></div>
+        <div class="hero-orbit orbit-two" aria-hidden="true"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> OPEN ONCOLOGY RESEARCH · TCGA LUAD</p>
+            <h1 id="hero-title">What does the <em>data</em> actually support?</h1>
+            <p class="hero-lead">We tested whether tumor molecular measurements improve survival modeling beyond basic clinical information. This dashboard shows the cohort, the held-out results, and the limitations—without turning an exploratory model into a patient risk calculator.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#results">Explore the results <span aria-hidden="true">↓</span></a>
+              <a class="button button-quiet" href="#method">How we tested it <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+          <aside class="hero-verdict" aria-label="Research conclusion">
+            <div class="verdict-topline"><span class="signal-icon" aria-hidden="true">!</span> CURRENT EVIDENCE</div>
+            <p class="verdict-heading">Not ready for individual risk prediction.</p>
+            <p>Neither added TMB nor RNA improved held-out survival ranking. At one and two years, none of the fitted models beat a simple constant-probability reference on prediction error.</p>
+            <div class="verdict-rule"></div>
+            <p class="verdict-foot">Research and educational use only. Not a clinical decision tool.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="overview section-pad" aria-labelledby="overview-title">
+        <div class="container">
+          <div class="section-intro">
+            <p class="section-kicker">01 / THE STUDY</p>
+            <h2 id="overview-title">One cancer type. One clear question.</h2>
+            <p>Public TCGA lung adenocarcinoma data, curated by cBioPortal. Each eligible patient contributes one primary tumor sample.</p>
+          </div>
+          <div class="stat-grid" id="cohort-stats" aria-live="polite">
+            <div class="stat-card loading">Loading cohort summary…</div>
+          </div>
+          <p class="small-note">Overall survival is measured from diagnosis. Death is the event; people still living at last follow-up are treated as right-censored, not as if they had survived indefinitely.</p>
+          <p class="small-note" id="missingness-note"></p>
+        </div>
+      </section>
+
+      <section class="results section-pad" id="results" aria-labelledby="results-title">
+        <div class="container">
+          <div class="section-intro">
+            <p class="section-kicker">02 / THE RESULTS</p>
+            <h2 id="results-title">Two comparisons, one honest conclusion.</h2>
+            <p>Use the controls to explore clinical data plus tumor mutational burden (TMB) or RNA gene activity. Each comparison uses its own matched patient group; scores across the two groups should not be directly compared.</p>
+          </div>
+
+          <div class="experiment-switch" role="group" aria-label="Choose an experiment">
+            <button class="switch-button active" type="button" data-experiment="clinical_tmb" aria-pressed="true">Clinical + TMB</button>
+            <button class="switch-button" type="button" data-experiment="rna" aria-pressed="false">Clinical + RNA</button>
+          </div>
+          <div id="experiment-summary" class="experiment-summary" aria-live="polite"></div>
+
+          <div class="result-grid">
+            <article class="panel rank-panel">
+              <div class="panel-heading">
+                <div><p class="panel-kicker">RANKING</p><h3>Held-out C-index</h3></div>
+                <span class="direction-tag">Higher is better</span>
+              </div>
+              <p class="panel-description">How well does the model put patients in the right survival order? A value around 0.50 is chance-level ranking.</p>
+              <div id="cindex-chart" class="cindex-chart" aria-live="polite"></div>
+              <p class="chart-note">Dots show the score; lines show 95% bootstrap intervals. The dashed line marks 0.50.</p>
+            </article>
+
+            <article class="panel probability-panel">
+              <div class="panel-heading">
+                <div><p class="panel-kicker">PROBABILITIES</p><h3>Prediction error</h3></div>
+                <span class="direction-tag">Lower is better</span>
+              </div>
+              <p class="panel-description">Brier score asks whether predicted survival chances are close to outcomes, accounting for incomplete follow-up.</p>
+              <div class="horizon-switch" role="group" aria-label="Choose a time horizon">
+                <button class="horizon-button active" type="button" data-months="12" aria-pressed="true">1 year</button>
+                <button class="horizon-button" type="button" data-months="24" aria-pressed="false">2 years</button>
+              </div>
+              <div id="brier-chart" class="brier-chart" aria-live="polite"></div>
+              <div id="probability-detail" class="probability-detail" aria-live="polite"></div>
+            </article>
+          </div>
+          <div class="result-interpretation" id="result-interpretation" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="method section-pad" id="method" aria-labelledby="method-title">
+        <div class="container">
+          <div class="section-intro">
+            <p class="section-kicker">03 / HOW IT WORKS</p>
+            <h2 id="method-title">The test data stayed out of the classroom.</h2>
+            <p>We built a reproducible workflow so the final scores reflect new, unseen patients—not answers accidentally shown to the model during training.</p>
+          </div>
+          <div class="method-grid">
+            <article class="method-step"><span class="step-number">01</span><h3>Define the cohort</h3><p>Validate public clinical files, keep primary lung adenocarcinoma tumors, and record every exclusion.</p></article>
+            <article class="method-step"><span class="step-number">02</span><h3>Keep a test set aside</h3><p>Set aside 20% of patients before fitting. Compare each pair of models on the same held-out patients.</p></article>
+            <article class="method-step"><span class="step-number">03</span><h3>Learn only from training</h3><p>Fill missing values and scale features inside each training fold. For RNA, select genes and compress them there too.</p></article>
+            <article class="method-step"><span class="step-number">04</span><h3>Check two kinds of error</h3><p>C-index checks ranking. One- and two-year Brier scores check survival probabilities against a simple reference.</p></article>
+          </div>
+          <div class="method-linkline"><span class="linkline-icon" aria-hidden="true">↗</span><p>Everything is reproducible from pinned, checksum-verified public inputs. <a href="https://github.com/Shlokbansal/surgisense#run" target="_blank" rel="noopener noreferrer">Read the run instructions</a>.</p></div>
+          <p class="small-note" id="source-version"></p>
+        </div>
+      </section>
+
+      <section class="limits section-pad" id="limits" aria-labelledby="limits-title">
+        <div class="container limits-grid">
+          <div>
+            <p class="section-kicker">04 / WHAT THIS CANNOT SAY</p>
+            <h2 id="limits-title">A research result is not a medical answer.</h2>
+            <p>Small held-out groups, incomplete follow-up, and a single retrospective cohort mean these findings need external validation. Stage and molecular data may not have been available at diagnosis. We cannot correct for delayed entry into sequencing with the current files.</p>
+            <p>This work does not measure treatment benefit, establish gene biomarkers, or support clinical decisions for an individual.</p>
+          </div>
+          <aside class="next-card">
+            <p class="next-label">NEXT RESEARCH MILESTONE</p>
+            <h3>External validation</h3>
+            <p>Test the same question in an independent cohort with comparable predictors, outcomes, and follow-up before making stronger claims.</p>
+            <a href="https://github.com/Shlokbansal/surgisense" target="_blank" rel="noopener noreferrer">See the open-source project <span aria-hidden="true">↗</span></a>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-row">
+        <p><strong>SurgiSense</strong> · Transparent oncology research, not clinical advice.</p>
+        <p>Source: <a href="https://www.cbioportal.org/study/summary?id=luad_tcga_pan_can_atlas_2018" target="_blank" rel="noopener noreferrer">TCGA LUAD PanCancer Atlas</a> · <a href="https://github.com/Shlokbansal/surgisense" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+      </div>
+    </footer>
+  </body>
+</html>

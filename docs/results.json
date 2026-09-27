@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "study": "TCGA Lung Adenocarcinoma, PanCancer Atlas 2018",
+  "datahub_commit": "8119e63a2c0c4fb1971cd67312a9a4e7636b825d",
+  "cohort": {
+    "eligible_patients": 501,
+    "observed_deaths": 181,
+    "censored_patients": 320,
+    "missing_features": {
+      "age": 10,
+      "sex": 0,
+      "stage": 2,
+      "tmb": 0
+    }
+  },
+  "rna_cohort": {
+    "matched_patients": 497,
+    "excluded_without_rna": 4,
+    "source_gene_rows": 20531,
+    "excluded_ambiguous_gene_rows": 50,
+    "retained_unique_genes": 20481
+  },
+  "experiments": {
+    "clinical_tmb": {
+      "development_patients": 400,
+      "held_out_patients": 101,
+      "development_deaths": 145,
+      "held_out_deaths": 36,
+      "models": [
+        {
+          "key": "clinical",
+          "label": "Clinical",
+          "development_cv_c_index": 0.6881000324825469,
+          "held_out_c_index": 0.5673277661795407,
+          "held_out_c_index_interval": [
+            0.4566410552985239,
+            0.6840315390702117
+          ]
+        },
+        {
+          "key": "clinical_plus_tmb",
+          "label": "Clinical + TMB",
+          "development_cv_c_index": 0.6876069570761525,
+          "held_out_c_index": 0.5568893528183716,
+          "held_out_c_index_interval": [
+            0.4463925812600321,
+            0.6772556836156138
+          ]
+        }
+      ],
+      "horizons": [
+        {
+          "months": 12,
+          "observed_death_probability": 0.09190308504534717,
+          "held_out_deaths": 9,
+          "held_out_censored": 7,
+          "constant_reference_brier": 0.08777030332718788,
+          "models": [
+            {
+              "key": "clinical",
+              "brier": 0.08882129463034397,
+              "mean_predicted_death": 0.12150214787880098
+            },
+            {
+              "key": "clinical_plus_tmb",
+              "brier": 0.08871521519830139,
+              "mean_predicted_death": 0.12208467985726035
+            }
+          ]
+        },
+        {
+          "months": 24,
+          "observed_death_probability": 0.1894830934147096,
+          "held_out_deaths": 17,
+          "held_out_censored": 33,
+          "constant_reference_brier": 0.1675545921712914,
+          "models": [
+            {
+              "key": "clinical",
+              "brier": 0.1690642956998524,
+              "mean_predicted_death": 0.2507137789387337
+            },
+            {
+              "key": "clinical_plus_tmb",
+              "brier": 0.17065793695536574,
+              "mean_predicted_death": 0.25193316184030246
+            }
+          ]
+        }
+      ]
+    },
+    "rna": {
+      "development_patients": 397,
+      "held_out_patients": 100,
+      "development_deaths": 144,
+      "held_out_deaths": 36,
+      "models": [
+        {
+          "key": "clinical",
+          "label": "Clinical",
+          "development_cv_c_index": 0.6942948527229518,
+          "held_out_c_index": 0.5154100165107319,
+          "held_out_c_index_interval": [
+            0.40476531415273526,
+            0.6339238835757051
+          ]
+        },
+        {
+          "key": "clinical_plus_rna",
+          "label": "Clinical + RNA",
+          "development_cv_c_index": 0.722083589083165,
+          "held_out_c_index": 0.4545954870665933,
+          "held_out_c_index_interval": [
+            0.3301151200265664,
+            0.580213251846158
+          ]
+        }
+      ],
+      "horizons": [
+        {
+          "months": 12,
+          "observed_death_probability": 0.08517167408844373,
+          "held_out_deaths": 8,
+          "held_out_censored": 10,
+          "constant_reference_brier": 0.08003551609805717,
+          "models": [
+            {
+              "key": "clinical",
+              "brier": 0.0823703032236749,
+              "mean_predicted_death": 0.13028110817325111
+            },
+            {
+              "key": "clinical_plus_rna",
+              "brier": 0.0840710383903914,
+              "mean_predicted_death": 0.12594010344812812
+            }
+          ]
+        },
+        {
+          "months": 24,
+          "observed_death_probability": 0.1987702031268629,
+          "held_out_deaths": 17,
+          "held_out_censored": 34,
+          "constant_reference_brier": 0.1696176914167156,
+          "models": [
+            {
+              "key": "clinical",
+              "brier": 0.18217869268480882,
+              "mean_predicted_death": 0.2629821935217629
+            },
+            {
+              "key": "clinical_plus_rna",
+              "brier": 0.1968471299285352,
+              "mean_predicted_death": 0.25903532873856006
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
