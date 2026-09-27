@@ -18,6 +18,9 @@ SOURCES = {
     "data_clinical_patient.txt": "2c347251474ec48a365e9b9dcd3b86a7106a6bbf69469ec4b740ba4d92695df7",
     "data_clinical_sample.txt": "b443896a6aed8256f3aa1b5e2f41e700392c76461be10936d2c344988bc5d84e",
 }
+RNA_SOURCE = {
+    "data_mrna_seq_v2_rsem.txt": "de8e782877b5239af448eaf8e8658b36d7cc32981cc040f97921ceac9c7a5a55",
+}
 
 
 def sha256(path: Path) -> str:
@@ -28,21 +31,24 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_sources(raw_dir: Path) -> dict[str, Path]:
-    paths = {name: raw_dir / name for name in SOURCES}
+def verify_sources(raw_dir: Path, include_rna: bool = False) -> dict[str, Path]:
+    expected_sources = SOURCES | (RNA_SOURCE if include_rna else {})
+    paths = {name: raw_dir / name for name in expected_sources}
     for name, path in paths.items():
         if not path.is_file():
-            raise FileNotFoundError(f"Missing {path}; run 'surgisense fetch' first")
+            command = "fetch-rna" if name in RNA_SOURCE else "fetch"
+            raise FileNotFoundError(f"Missing {path}; run 'surgisense {command}' first")
         actual = sha256(path)
-        if actual != SOURCES[name]:
+        if actual != expected_sources[name]:
             raise ValueError(f"Checksum mismatch for {path}: {actual}")
     return paths
 
 
-def fetch_sources(raw_dir: Path) -> dict[str, Path]:
+def fetch_sources(raw_dir: Path, include_rna: bool = False) -> dict[str, Path]:
     """Download each source atomically and reject changed upstream files."""
     raw_dir.mkdir(parents=True, exist_ok=True)
-    for name, expected in SOURCES.items():
+    expected_sources = SOURCES | (RNA_SOURCE if include_rna else {})
+    for name, expected in expected_sources.items():
         destination = raw_dir / name
         if destination.is_file() and sha256(destination) == expected:
             continue
@@ -60,4 +66,4 @@ def fetch_sources(raw_dir: Path) -> dict[str, Path]:
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
-    return verify_sources(raw_dir)
+    return verify_sources(raw_dir, include_rna=include_rna)

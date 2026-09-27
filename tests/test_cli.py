@@ -25,3 +25,26 @@ def test_failed_evaluation_does_not_write_partial_report(
     with pytest.raises(RuntimeError, match="model failed"):
         cli.main()
     assert not output.exists()
+
+
+def test_failed_rna_evaluation_does_not_write_partial_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "rna_report"
+    monkeypatch.setattr(cli, "build_cohort", lambda _: (pd.DataFrame(), {}))
+    monkeypatch.setattr(
+        cli, "load_expression", lambda *_args: (pd.DataFrame(), None, [], {})
+    )
+
+    def fail_evaluation(*_args: object) -> None:
+        raise RuntimeError("rna model failed")
+
+    monkeypatch.setattr(cli, "evaluate_rna", fail_evaluation)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["surgisense", "evaluate-rna", "--raw-dir", str(tmp_path), "--output-dir", str(output)],
+    )
+    with pytest.raises(RuntimeError, match="rna model failed"):
+        cli.main()
+    assert not output.exists()
